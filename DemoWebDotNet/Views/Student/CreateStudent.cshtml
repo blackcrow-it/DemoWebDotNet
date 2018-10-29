@@ -1,0 +1,147 @@
+﻿
+@{
+    ViewData["Title"] = "CreateStudent";
+}
+<br/>
+<div>
+    <form id="my-form" method="post" action="javascript:void(0);" onsubmit="addStudent()">
+        <input type="text" id="student-id" disabled="disabled" placeholder="ID student" />
+        <input type="text" id="student-name" placeholder="Name">
+        <input type="text" id="student-address" placeholder="Address">
+        <input type="text" id="student-email" placeholder="Email">
+        <input type="submit" value="Create" id="create">
+        <input type="button" value="Edit" id="edit">
+        <input type="button" value="Close" onclick="closeInput()" id="close">
+    </form>
+</div>
+<br/>
+<p id="counter"></p>
+<div>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Email</th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tbody id="todo"></tbody>
+    </table>
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script>
+    const uri = 'api/student';
+    let todo = null;
+    function getCount(data) {
+        const el = $('#counter');
+        let name = 'to-do';
+        if (data) {
+            if (data > 1) {
+                name = 'to-dos';
+            }
+            el.text(data + ' ' + name);
+        } else {
+            el.html(`No ${name}`);
+        }
+    }
+    $(document).ready(function () {
+        getData();
+        $('#edit').css({ 'display': 'none' });
+        $('#close').css({ 'display': 'none' });
+    });
+    function getData() {
+        $.ajax({
+            type: 'GET',
+            url: uri,
+            success: function (data) {
+                $('#todo').empty();
+                window.getCount(data.length);
+                $.each(data, function (key, item) {
+                    $(`<tr><td>${item.id}</td><td>${item.name}</td><td>${item.address}</td><td>${item.email}</td><td><button onclick="editStudent(${item.id
+                        })">Edit</button></td><td><button onclick="deleteStudent(${item.id})">Delete</button></td></tr>`).appendTo($('#todo'));
+                    console.log(item.name);
+                });
+
+                todo = data;
+            }
+        });
+    }
+
+    function addStudent() {
+        const item = {
+            'name': $('#student-name').val(),
+            'address': $('#student-address').val(),
+            'email': $('#student-email').val()
+        };
+        $.ajax({
+            type: 'POST',
+            accepts: 'application/json',
+            url: 'api/student',
+            contentType: 'application/json',
+            data: JSON.stringify(item),
+            error: function (jqXhr, textStatus, errorThrown) {
+                alert('here');
+            },
+            success: function (result) {
+                getData();
+                $('#student-name').val('');
+                $('#student-address').val('');
+                $('#student-email').val('');
+                alert('success');
+            }
+        });
+    }
+    function deleteStudent(id) {
+        $.ajax({
+            url: uri + '/' + id,
+            type: 'DELETE',
+            success: function (result) {
+                getData();
+            }
+        });
+    }
+    function editStudent(id) {
+        $.each(todo, function (key, item) {
+            if (item.id === id) {
+                $('#student-id').val(item.id);
+                $('#student-name').val(item.name);
+                $('#student-address').val(item.address);
+                $('#student-email').val(item.email);
+            }
+        });
+        $('#edit').css({ 'display': 'block' });
+        $('#close').css({ 'display': 'block' });
+        $('#create').css({ 'display': 'none' });
+    }
+
+    $('#edit').click(function() {
+        const item = {
+            'name': $('#student-name').val(),
+            'address': $('#student-address').val(),
+            'email': $('#student-email').val()
+        };
+        $.ajax({
+            url: uri + '/' + $('#student-id').val(),
+            type: 'PUT',
+            accepts: 'application/json',
+            contentType: 'application/json',
+            data: JSON.stringify(item),
+            success: function (result) {
+                getData();
+                alert('success');
+            }
+        });
+        closeInput();
+        return false;
+    });
+    function closeInput() {
+        $('#edit').css({ 'display': 'none' });
+        $('#close').css({ 'display': 'none' });
+        $('#create').css({ 'display': 'block' });
+        $('#student-id').val('');
+        $('#student-name').val('');
+        $('#student-address').val('');
+        $('#student-email').val('');
+    }
+</script>
